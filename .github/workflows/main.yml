@@ -2,15 +2,19 @@ name: React CI
 
 on:
   push:
-    branches: [main]        # Run only on pushes to main
+    branches: [main]          # Run on pushes to main
 
-# 🛠️ React app directory
 env:
-  APP_DIR: my-app           # <-- Your app is in my-app/
+  APP_DIR: my-app            # where package.json and yarn.lock live
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    # All shell steps inherit this working directory, so we write it only once
+    defaults:
+      run:
+        working-directory: ${{ env.APP_DIR }}
 
     steps:
       - name: ⬇️ Checkout code
@@ -20,16 +24,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'yarn'       # Enable caching to speed up installs
+          cache: yarn                         # enable yarn cache
+          cache-dependency-path: |
+            ${{ env.APP_DIR }}/yarn.lock      # tell the action exactly where the lockfile is
 
-      - name: 🗂️ List contents of app directory
-        run: ls -al ${{ github.workspace }}/${{ env.APP_DIR }}
+      - name: 🗂️ List contents (debug; optional)
+        run: ls -al
 
       - name: 📦 Install dependencies
-        run: yarn install --frozen-lockfile
-        working-directory: ${{ github.workspace }}/${{ env.APP_DIR }}
+        run: yarn install --frozen-lockfile   # now succeeds because yarn.lock is present
 
       - name: 🏗️ Build React app
         run: yarn build
-        working-directory: ${{ github.workspace }}/${{ env.APP_DIR }}
-
